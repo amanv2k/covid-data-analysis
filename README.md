@@ -5,7 +5,8 @@ ML and data analysis project of covid data using data from [here](https://github
 on a **world** scale we need to analyse how vaccinations have affected number of new cases per day for this we need **Vaccination data** and **new cases per day data**
 
 ## Seasonal analysis:
-Analyze new cases per day data in a seasonal fashion checking if there any correlation between month of the year and **new cases per day**
+- Analyze new cases per day data in a seasonal fashion checking if there any correlation between month of the year and **new cases per day**
+- Analyze how people are getting vaccinated in a given month
 
 ## Other :
 - Analyze how **total number of cases** today affect the **new cases** tommorow across the world
