@@ -16,5 +16,4 @@ on a **world** scale we need to analyse how vaccinations have affected number of
 
 ## Finally :
 - with all the data we aim to show which factors affect reduce covid the most and what we should aim on
-- with the current trend how long will covid last will we have new varients
-- 
+- with the current trend how long will covid last will we have new varients 
