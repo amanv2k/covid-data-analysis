@@ -1,0 +1,17 @@
+---
+title: "Vaccination Data Analysis"
+author: "Mohan Teja,"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading data
+
+```{r}
+library(readr)
+vaccinations <- read_csv("data/vaccinations.csv")
+head(vaccinations)
+```
