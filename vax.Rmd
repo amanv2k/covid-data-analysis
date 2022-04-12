@@ -12,6 +12,21 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(readr)
-vaccinations <- read_csv("data/vaccinations.csv")
-head(vaccinations)
+urlfile="https://github.com/owid/covid-19-data/raw/master/public/data/vaccinations/country_data/India.csv"
+vaccdata_india<-read_csv(url(urlfile))
 ```
+
+## About the data
+```{r}
+str(vaccdata_india)
+na.omit(vaccdata_india)
+colnames(vaccdata_india)
+summary(vaccdata_india)
+str(vaccdata_india)
+```
+
+## plots
+```{r}
+
+```
+
