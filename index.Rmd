@@ -1,0 +1,109 @@
+---
+title: "Vaccination Data Analysis"
+author: "Mohan Teja,"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Reading data
+
+```{r}
+library(readr)
+vaccinations <- read_csv("data/vaccinations.csv",show_col_types = FALSE)
+newCases <- read_csv("data/new_cases_per_million.csv",show_col_types = FALSE)
+deaths <- read_csv("data/total_deaths_per_million.csv",show_col_types = FALSE)
+```
+
+## Subsetting the Data
+
+### Note : 
+
+new cases and deaths are taken per million and vaccinations are taken per 100
+
+```{r}
+ind <-vaccinations[vaccinations[1]=="India",]
+vaxIndia <- data.frame(ind$date,ind$people_fully_vaccinated_per_hundred)
+summary(vaxIndia)
+newCasesIndia <- data.frame(newCases$date,newCases$India)
+summary(newCasesIndia)
+deathsIndia <- data.frame(deaths$date,deaths$India)
+summary(deathsIndia)
+```
+
+
+
+## Cleaning Data 
+
+### Na values
+
+As we can see there are Na values in the data and timelines don't algin correctly we can fill na with previous know values since this is a time series data so we fill na with previous known values and remaining na with 0
+
+```{r}
+fill.NAs <- function(x) {is_na<-is.na(x); x[Reduce(function(i,j) if (is_na[j]) i else j, seq_len(length(x)), accumulate=T)]}
+vaxIndia$ind.people_fully_vaccinated_per_hundred <- fill.NAs(vaxIndia$ind.people_fully_vaccinated_per_hundred)
+vaxIndia[is.na(vaxIndia)] = 0
+summary(vaxIndia)
+newCasesIndia$newCases.India <- fill.NAs(newCasesIndia$newCases.India)
+newCasesIndia[is.na(newCasesIndia)] = 0 
+summary(newCasesIndia)
+deathsIndia$deaths.India <- fill.NAs(deathsIndia$deaths.India)
+deathsIndia[is.na(deathsIndia)] = 0
+summary(deathsIndia)
+```
+
+### Dates
+
+```{r}
+vaxIndia$ind.date = as.Date(vaxIndia$ind.date,"%y-%m-%d")
+newCasesIndia$newCases.date = as.Date(newCasesIndia$newCases.date,"%y-%m-%d")
+deathsIndia$deaths.date = as.Date(deathsIndia$deaths.date,"%y-%m-%d")
+
+vaxIndia  = vaxIndia[vaxIndia$ind.date > as.Date("2021-01-14") & vaxIndia$ind.date < as.Date("2022-03-02"),]
+summary(vaxIndia)
+newCasesIndia = newCasesIndia[newCasesIndia$newCases.date > as.Date("2021-01-14") & newCasesIndia$newCases.date < as.Date("2022-03-02"),]
+summary(newCasesIndia)
+deathsIndia = deathsIndia[deathsIndia$deaths.date > as.Date("2021-01-14") & deathsIndia$deaths.date < as.Date("2022-03-02"),]
+summary(deathsIndia)
+```
+
+Number of deaths is now cumulative data we need to make it non cumulative and make a data frame out of all the clean lists we made
+
+```{r}
+ndeaths = diff(c(0,deathsIndia$deaths.India))
+ndeaths[1]=0
+df = data.frame(ncases = newCasesIndia$newCases.India,vax = vaxIndia$ind.people_fully_vaccinated_per_hundred,death = ndeaths)
+summary(df)
+```
+
+## Correlations
+
+```{r}
+c =  cor(df)
+corrplot::corrplot.mixed(c,order='AOE')
+```
+
+### Observation :
+
+* We can see that vaccinations have little to no effect on number of new cases  
+* New cases have a very high positive correlation with deaths
+* Vaccinations have a negative correalation with death
+
+## plots
+```{r}
+plot.ts(df)
+```
+
+## Model
+```{r}
+mdl = lm(death~vax*ncases,data = df)
+summary(mdl)
+d =  predict(mdl,newdata = df)
+plot(df$death,type = "l")
+lines(d,col="red")
+```
+
+### Result :
+Hence we can see that reducing new cases and increasing vaccination will increase mortality ie decrease number of new deaths
