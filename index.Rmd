@@ -1,6 +1,6 @@
 ---
 title: "Vaccination Data Analysis"
-author: "Mohan Teja,"
+author: "G.Mohan Teja 19BEC1133,Aman Verma 19BEC1284,Ayush Singh 19BEC1032,Janhavi Kulkarni 19BLC1187"
 output: html_document
 ---
 
