@@ -19,7 +19,7 @@ deaths <- read_csv("data/total_deaths_per_million.csv",show_col_types = FALSE)
 
 ## Subsetting the Data
 
-### Note : 
+### Note :
 
 new cases and deaths are taken per million and vaccinations are taken per 100
 
@@ -33,9 +33,7 @@ deathsIndia <- data.frame(deaths$date,deaths$India)
 summary(deathsIndia)
 ```
 
-
-
-## Cleaning Data 
+## Cleaning Data
 
 ### Na values
 
@@ -87,16 +85,18 @@ corrplot::corrplot.mixed(c,order='AOE')
 
 ### Observation :
 
-* We can see that vaccinations have little to no effect on number of new cases  
-* New cases have a very high positive correlation with deaths
-* Vaccinations have a negative correalation with death
+-   We can see that vaccinations have little to no effect on number of new cases\
+-   New cases have a very high positive correlation with deaths
+-   Vaccinations have a negative correlation with death
 
 ## plots
+
 ```{r}
 plot.ts(df)
 ```
 
-## Model
+## Multiple Linear Regression Model
+
 ```{r}
 mdl = lm(death~vax*ncases,data = df)
 summary(mdl)
@@ -105,5 +105,38 @@ plot(df$death,type = "l")
 lines(d,col="red")
 ```
 
+## Timeseries Model
+
+```{r}
+dfarima = data.frame(ncases = newCasesIndia$newCases.India)
+summary(dfarima)
+
+set.seed(123)
+inds = seq(as.Date("2021-01-15"), as.Date("2022-03-01"), by="day")
+new_data_ts = ts(dfarima, frequency = 365,
+                 start = c(2021, as.numeric(format(inds[1],"%j"))),
+                 end = c(2022, as.numeric(format(inds[411],"%j"))))
+
+
+# ts_ggplot(df, xlab = "Timeline", ylab = "Deaths")
+
+training_set = window(new_data_ts, start = c(2021, 22), end = c(2022, 10))
+validation_set = window(new_data_ts, start = c(2022, 10), end = c(2022,60 ))
+
+fit_arima<- auto.arima(training_set)
+
+# Forecast
+
+fcast<-forecast(fit_arima,h=10)
+autoplot(fcast,main = 'Forecast for 10 days',xlab = 'Timeline',ylab = 'New Cases')
+
+print(fcast)
+print(validation_set[1:10])
+
+acc_arima = accuracy(f = fcast,x = validation_set)
+summary(acc_arima)
+```
+
 ### Result :
+
 Hence we can see that reducing new cases and increasing vaccination will increase mortality ie decrease number of new deaths
