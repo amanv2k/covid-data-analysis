@@ -85,7 +85,7 @@ corrplot::corrplot.mixed(c,order='AOE')
 
 ### Observation :
 
--   We can see that vaccinations have little to no effect on number of new cases\
+-   We can see that vaccinations have little to no effect on number of new cases
 -   New cases have a very high positive correlation with deaths
 -   Vaccinations have a negative correlation with death
 
@@ -97,7 +97,7 @@ plot.ts(df)
 
 ## Regression Model
 
-An Explanatory model by which we intend to explain what vaccines affect the most in past using past data 
+An Explanatory model by which we intend to explain what vaccines affect the most in past using past data
 
 ```{r}
 mdl = lm(death~vax*ncases,data = df)
@@ -111,7 +111,11 @@ lines(d,col="red")
 
 Hence we can see that Vaccines don't impact the number new cases that come everyday but what they do is increase the mortality and give vaccinated people a better chance to live if they do get affected by corona
 
-## Timeseries Model
+## Auto-ARIMA Model
+
+Implementing an Auto-ARIMA model to predict nearby cases.
+
+For this we need to convert the dataset into a timeseries data. We initialize dates as a seq by day and attach the dataframe (dfarmima).
 
 ```{r}
 library(forecast)
@@ -120,28 +124,38 @@ summary(dfarima)
 
 set.seed(123)
 inds = seq(as.Date("2021-01-15"), as.Date("2022-03-01"), by="day")
-new_data_ts = ts(dfarima, frequency = 365,
+arima_ds = ts(dfarima, frequency = 365,
                  start = c(2021, as.numeric(format(inds[1],"%j"))),
                  end = c(2022, as.numeric(format(inds[411],"%j"))))
 
+head(arima_ds)
+```
 
-# ts_ggplot(df, xlab = "Timeline", ylab = "Deaths")
+### Training and validation sets
 
-training_set = window(new_data_ts, start = c(2021, 22), end = c(2022, 10))
-validation_set = window(new_data_ts, start = c(2022, 10), end = c(2022,60 ))
+```{r}
+training_set = window(arima_ds, start = c(2021, 22), end = c(2022, 10))
+validation_set = window(arima_ds, start = c(2022, 10), end = c(2022,60 ))
 
+autoplot(training_set, main = 'Training set',xlab = 'Timeline',ylab = 'Number of Cases per million')
+```
+
+## Forecasting
+
+Here we use forecast library to train the auto-ARIMA model to predict next 10 days of new cases. For validation we use the validation_set to verify the prediction.
+
+```{r}
 fit_arima<- auto.arima(training_set)
-
-# Forecast
-
+summary(fit_arima)
 fcast<-forecast(fit_arima,h=10)
 autoplot(fcast,main = 'Forecast for 10 days',xlab = 'Timeline',ylab = 'New Cases')
 
 print(fcast)
+
 print(validation_set[1:10])
 
 acc_arima = accuracy(f = fcast,x = validation_set)
-summary(acc_arima)
 ```
+## Result
 
-
+Here, we observe our auto-ARIMA model was able to predict the new number of cases for next couple of days.
