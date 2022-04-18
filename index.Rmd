@@ -95,7 +95,9 @@ corrplot::corrplot.mixed(c,order='AOE')
 plot.ts(df)
 ```
 
-## Multiple Linear Regression Model
+## Regression Model
+
+An Explanatory model by which we intend to explain what vaccines affect the most in past using past data 
 
 ```{r}
 mdl = lm(death~vax*ncases,data = df)
@@ -105,9 +107,14 @@ plot(df$death,type = "l")
 lines(d,col="red")
 ```
 
+### Result :
+
+Hence we can see that Vaccines don't impact the number new cases that come everyday but what they do is increase the mortality and give vaccinated people a better chance to live if they do get affected by corona
+
 ## Timeseries Model
 
 ```{r}
+library(forecast)
 dfarima = data.frame(ncases = newCasesIndia$newCases.India)
 summary(dfarima)
 
@@ -137,6 +144,4 @@ acc_arima = accuracy(f = fcast,x = validation_set)
 summary(acc_arima)
 ```
 
-### Result :
 
-Hence we can see that reducing new cases and increasing vaccination will increase mortality ie decrease number of new deaths
