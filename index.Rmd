@@ -12,9 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(readr)
-vaccinations <- read_csv("data/vaccinations.csv",show_col_types = FALSE)
-newCases <- read_csv("data/new_cases_per_million.csv",show_col_types = FALSE)
-deaths <- read_csv("data/total_deaths_per_million.csv",show_col_types = FALSE)
+vaccinations <- read_csv(url("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations.csv"),show_col_types = FALSE)
+newCases <- read_csv(url("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/jhu/new_cases_per_million.csv"),show_col_types = FALSE)
+deaths <- read_csv(url("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/jhu/total_deaths_per_million.csv"),show_col_types = FALSE)
 ```
 
 ## Subsetting the Data
@@ -50,6 +50,12 @@ summary(newCasesIndia)
 deathsIndia$deaths.India <- fill.NAs(deathsIndia$deaths.India)
 deathsIndia[is.na(deathsIndia)] = 0
 summary(deathsIndia)
+firstcasedate<-newCasesIndia$newCases.date[1]
+latestcasedate<-newCasesIndia$newCases.date[length(newCasesIndia$newCases.date)]
+firstvaxdate<-vaxIndia$ind.date[1]
+latestvaxdate<-vaxIndia$ind.date[length(vaxIndia$ind.date)]
+firstdeathdate<-deathsIndia$deaths.date[1]
+latestdeathdate<-deathsIndia$deaths.date[length(deathsIndia$deaths.date)]
 ```
 
 ### Dates
@@ -59,11 +65,11 @@ vaxIndia$ind.date = as.Date(vaxIndia$ind.date,"%y-%m-%d")
 newCasesIndia$newCases.date = as.Date(newCasesIndia$newCases.date,"%y-%m-%d")
 deathsIndia$deaths.date = as.Date(deathsIndia$deaths.date,"%y-%m-%d")
 
-vaxIndia  = vaxIndia[vaxIndia$ind.date > as.Date("2021-01-14") & vaxIndia$ind.date < as.Date("2022-03-02"),]
+vaxIndia  = vaxIndia[vaxIndia$ind.date > as.Date(firstvaxdate) & vaxIndia$ind.date < as.Date(latestvaxdate),]
 summary(vaxIndia)
-newCasesIndia = newCasesIndia[newCasesIndia$newCases.date > as.Date("2021-01-14") & newCasesIndia$newCases.date < as.Date("2022-03-02"),]
+newCasesIndia = newCasesIndia[newCasesIndia$newCases.date > as.Date(firstcasedate) & newCasesIndia$newCases.date < as.Date(latestcasedate),]
 summary(newCasesIndia)
-deathsIndia = deathsIndia[deathsIndia$deaths.date > as.Date("2021-01-14") & deathsIndia$deaths.date < as.Date("2022-03-02"),]
+deathsIndia = deathsIndia[deathsIndia$deaths.date > as.Date(firstdeathdate) & deathsIndia$deaths.date < as.Date(latestdeathdate),]
 summary(deathsIndia)
 ```
 
@@ -72,6 +78,10 @@ Number of deaths is now cumulative data we need to make it non cumulative and ma
 ```{r}
 ndeaths = diff(c(0,deathsIndia$deaths.India))
 ndeaths[1]=0
+dates<-seq(from=as.Date(firstcasedate),to=as.Date(firstvaxdate-1),by='day')
+vaxx<-rep(c(0), as.numeric(firstvaxdate-firstcasedate))
+testdf<-data.frame(ind.date=dates,ind.people_fully_vaccinated_per_hundred=vaxx)
+vaxIndia<-rbind(testdf,vaxIndia)
 df = data.frame(ncases = newCasesIndia$newCases.India,vax = vaxIndia$ind.people_fully_vaccinated_per_hundred,death = ndeaths)
 summary(df)
 ```
@@ -123,19 +133,17 @@ dfarima = data.frame(ncases = newCasesIndia$newCases.India)
 summary(dfarima)
 
 set.seed(123)
-inds = seq(as.Date("2021-01-15"), as.Date("2022-03-01"), by="day")
+inds = seq(firstcasedate,latestcasedate, by="day")
 arima_ds = ts(dfarima, frequency = 365,
-                 start = c(2021, as.numeric(format(inds[1],"%j"))),
-                 end = c(2022, as.numeric(format(inds[411],"%j"))))
-
-head(arima_ds)
+                 start = c(2020, as.numeric(format(inds[1],"%j"))),
+                 end = c(2022, as.numeric(format(inds[821],"%j"))))
 ```
 
 ### Training and validation sets
 
 ```{r}
-training_set = window(arima_ds, start = c(2021, 22), end = c(2022, 10))
-validation_set = window(arima_ds, start = c(2022, 10), end = c(2022,60 ))
+training_set = window(arima_ds, start = c(2020, 22), end = c(2022, 10))
+validation_set = window(arima_ds, start = c(2022, 11), end = c(2022,111 ))
 
 autoplot(training_set, main = 'Training set',xlab = 'Timeline',ylab = 'Number of Cases per million')
 ```
@@ -145,7 +153,7 @@ autoplot(training_set, main = 'Training set',xlab = 'Timeline',ylab = 'Number of
 Here we use forecast library to train the auto-ARIMA model to predict next 10 days of new cases. For validation we use the validation_set to verify the prediction.
 
 ```{r}
-fit_arima<- auto.arima(training_set)
+fit_arima<- auto.arima(training_set,seasonal = TRUE)
 summary(fit_arima)
 fcast<-forecast(fit_arima,h=10)
 autoplot(fcast,main = 'Forecast for 10 days',xlab = 'Timeline',ylab = 'New Cases')
@@ -154,8 +162,41 @@ print(fcast)
 
 print(validation_set[1:10])
 
-acc_arima = accuracy(f = fcast,x = validation_set)
+acc_arima = accuracy(fcast,x = validation_set)
 ```
 ## Result
 
 Here, we observe our auto-ARIMA model was able to predict the new number of cases for next couple of days.
+
+## Facebook prophet model
+```{r}
+#newvac<-read_csv("vac.csv",show_col_types = FALSE)
+#newcases<-read_csv("cases.csv",show_col_types = FALSE)
+
+fb_frame = newCasesIndia
+
+# Facebook prophet model expects columns to be with specific names.
+colnames(fb_frame) <- c("ds", "y")
+
+fb_frame = rename(fb_frame, c(ds="newCases.date", y="newCases.India"))
+
+# Split dataset into train and test set.
+fb_train = fb_frame[1:length(fb_frame)-30,]
+fb_test = fb_frame[length(fb_frame)-30:length(fb_frame),]
+
+m <- prophet(df=fb_train, seasonality.prior.scale = 0.1,yearly.seasonality=TRUE,changepoint.prior.scale = 0.01)
+
+future = make_future_dataframe(m, periods = 60)
+fb_forecast = predict(m, future)
+fb_forecast1 = fb_forecast[c('ds','yhat')]
+
+plot(m, fb_forecast1, xlab = "Timeline",ylab = "Deaths")
+
+# Plot forecast and test set.
+ts_ggplot(Forecast=ts(fb_forecast1$yhat), Testset=ts(fb_test$y))
+
+# Plotting forecast components.
+prophet_plot_components(m, fb_forecast)
+verifydf<-data.frame(fb_forecast$ds,fb_forecast$yhat,fb_frame$y[1:280])
+
+```
