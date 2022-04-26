@@ -172,13 +172,16 @@ Here, we observe our auto-ARIMA model was able to predict the new number of case
 ```{r}
 #newvac<-read_csv("vac.csv",show_col_types = FALSE)
 #newcases<-read_csv("cases.csv",show_col_types = FALSE)
-
+library("dplyr")
+library("prophet")
+library("ggplot2")
+library("tsbox")
 fb_frame = newCasesIndia
 
 # Facebook prophet model expects columns to be with specific names.
 colnames(fb_frame) <- c("ds", "y")
 
-fb_frame = rename(fb_frame, c(ds="newCases.date", y="newCases.India"))
+#fb_frame = rename(fb_frame, c(ds="newCases.date", y="newCases.India"))
 
 # Split dataset into train and test set.
 fb_train = fb_frame[1:length(fb_frame)-30,]
@@ -197,6 +200,6 @@ ts_ggplot(Forecast=ts(fb_forecast1$yhat), Testset=ts(fb_test$y))
 
 # Plotting forecast components.
 prophet_plot_components(m, fb_forecast)
-verifydf<-data.frame(fb_forecast$ds,fb_forecast$yhat,fb_frame$y[1:280])
+#verifydf<-data.frame(fb_forecast$ds,fb_forecast$yhat,fb_frame$y[1:280])
 
 ```
