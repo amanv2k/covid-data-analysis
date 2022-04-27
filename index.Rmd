@@ -209,8 +209,6 @@ prophet_plot_components(m, fb_forecast)
 
 ```
 
-<<<<<<< HEAD
-
 
 ## Smoothing Predictions in R for 30 days
 ```{r}
@@ -239,10 +237,10 @@ autoplot(tbats.data)
 
 ```
 
-=======
+
 ## Observations
 
 Facebook's Prophet algorithm is widely used in time series forecasting. In our scenario, we observe that the model is good in predicting the lower half of the data, but, for sudden rise in data, it is not performing as expected. This can be fixed with changing the parameter seasonality.node="multiplicative" in the model parameters. But then the model exhibits over-fitting nature. At the present we forecast number of new cases in upcoming 30 days. We observe a new wave of cases in this upcoming 30 days as displayed in the plot.
->>>>>>> fb22d623eb2a3470cc47c90e81abfe098469ce70
+
 
 
