@@ -221,13 +221,10 @@ data = newCasesIndia$newCases.India
 data.train = window(data,end = floor(length(data)*0.88))
 data.test  = window(data,start = ceiling(length(data)*0.88))
 
-naive.data <- naive(data.train, h = 30)
 holt.data <- holt(data.train,h = 30)
 ses.data <- ses(data.train,h = 30)
 tbats.data<- forecast(tbats(data.train), h = 30)
 
-summary(naive.data)
-autoplot(naive.data)
 summary(ses.data)
 autoplot(ses.data)
 summary(holt.data)
