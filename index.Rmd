@@ -155,12 +155,12 @@ Here we use forecast library to train the auto-ARIMA model to predict next 10 da
 ```{r}
 fit_arima<- auto.arima(training_set,seasonal = TRUE)
 summary(fit_arima)
-fcast<-forecast(fit_arima,h=10)
+fcast<-forecast(fit_arima,h=30)
 autoplot(fcast,main = 'Forecast for 10 days',xlab = 'Timeline',ylab = 'New Cases')
 
 print(fcast)
 
-print(validation_set[1:10])
+print(validation_set[1:30])
 
 acc_arima = accuracy(fcast,x = validation_set)
 ```
@@ -177,9 +177,10 @@ library("prophet")
 library("ggplot2")
 library("tsbox")
 fb_frame = newCasesIndia
+fb_frame$floor <- 0
 
 # Facebook prophet model expects columns to be with specific names.
-colnames(fb_frame) <- c("ds", "y")
+colnames(fb_frame) <- c("ds", "y","floor")
 
 #fb_frame = rename(fb_frame, c(ds="newCases.date", y="newCases.India"))
 
@@ -187,16 +188,20 @@ colnames(fb_frame) <- c("ds", "y")
 fb_train = fb_frame[1:length(fb_frame)-30,]
 fb_test = fb_frame[length(fb_frame)-30:length(fb_frame),]
 
-m <- prophet(df=fb_train, seasonality.prior.scale = 0.1,yearly.seasonality=TRUE,changepoint.prior.scale = 0.01)
+m <- prophet(df=fb_frame,growth = "linear",seasonality.mode = "additive", seasonality.prior.scale =10,yearly.seasonality=TRUE,changepoint.prior.scale = 0.05)
+#multiplicative seems overfitting
 
-future = make_future_dataframe(m, periods = 60)
+future = make_future_dataframe(m, periods = 30)
+future$floor <- 0
+
 fb_forecast = predict(m, future)
 fb_forecast1 = fb_forecast[c('ds','yhat')]
 
-plot(m, fb_forecast1, xlab = "Timeline",ylab = "Deaths")
+plot(m, fb_forecast1, xlab = "Timeline",ylab = "New cases per million")
 
 # Plot forecast and test set.
-ts_ggplot(Forecast=ts(fb_forecast1$yhat), Testset=ts(fb_test$y))
+ts_ggplot(Forecast=ts(fb_forecast1$yhat), Data=ts(fb_test$y))
+tail(fb_forecast1)
 
 # Plotting forecast components.
 prophet_plot_components(m, fb_forecast)
@@ -204,6 +209,7 @@ prophet_plot_components(m, fb_forecast)
 
 ```
 
+<<<<<<< HEAD
 
 
 ## Smoothing Predictions in R for 30 days
@@ -233,5 +239,10 @@ autoplot(tbats.data)
 
 ```
 
+=======
+## Observations
+
+Facebook's Prophet algorithm is widely used in time series forecasting. In our scenario, we observe that the model is good in predicting the lower half of the data, but, for sudden rise in data, it is not performing as expected. This can be fixed with changing the parameter seasonality.node="multiplicative" in the model parameters. But then the model exhibits over-fitting nature. At the present we forecast number of new cases in upcoming 30 days. We observe a new wave of cases in this upcoming 30 days as displayed in the plot.
+>>>>>>> fb22d623eb2a3470cc47c90e81abfe098469ce70
 
 
